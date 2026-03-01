@@ -1,14 +1,15 @@
 🧠 Bitespeed Backend Task — Identity Reconciliation
 🚀 Live API
 
-Endpoint:
+Endpoint
 
 POST https://bitespeed-identity-hz5c.onrender.com/identify
+
 📌 Problem Statement
 
 FluxKart customers may place orders using different combinations of email addresses and phone numbers.
 
-The goal of this service is to:
+The objective of this service is to:
 
 Identify whether incoming contact information belongs to an existing customer
 
@@ -51,54 +52,56 @@ linkPrecedence    "primary" | "secondary"
 createdAt         DateTime
 updatedAt         DateTime
 deletedAt         DateTime?
-Rules:
+Rules
 
-Oldest contact in a cluster is marked "primary"
+The oldest contact in a cluster is marked "primary".
 
-All other linked contacts are "secondary"
+All other linked contacts are marked "secondary".
 
-Secondary contacts reference primary via linkedId
+Secondary contacts reference the primary contact using linkedId.
 
 🧩 Approach
 
 This problem is modeled as a graph connectivity problem:
 
-Each contact row is a node
+Each contact row represents a node.
 
-Shared email or phone creates an edge
+A shared email or phone number creates an edge.
 
-All connected nodes form a cluster
+All connected nodes form a cluster.
 
-The oldest contact becomes the primary node
+The oldest contact (by createdAt) becomes the primary node.
 
-Algorithm Overview
+🔍 Algorithm Overview
 
-Search contacts matching incoming email OR phoneNumber.
+Search for contacts matching the incoming email OR phoneNumber.
 
-If no match → create new primary.
+If no match is found → create a new primary contact.
 
-If matches found:
+If matches exist:
 
-Fetch full connected component.
+Fetch the full connected component.
 
-Determine oldest primary (by createdAt).
+Determine the oldest primary contact.
 
-Convert any newer primaries to secondary.
+Convert any newer primaries into secondary contacts.
 
-If exact email+phone pair does not exist → create secondary.
+If an exact (email + phoneNumber) pair does not exist → create a secondary contact.
 
-Return consolidated identity.
+Return the consolidated identity response.
 
 📡 API Specification
 Endpoint
+
 POST /identify
+
 Request Body
 {
   "email": "string?",
   "phoneNumber": "string?"
 }
 
-At least one field is required.
+At least one field (email or phoneNumber) is required.
 
 📤 Sample Responses
 🧪 New Contact
@@ -110,7 +113,7 @@ At least one field is required.
     "secondaryContactIds": []
   }
 }
-🧪 Adding Secondary Contact
+🧪 Adding a Secondary Contact
 {
   "contact": {
     "primaryContactId": 1,
@@ -122,7 +125,7 @@ At least one field is required.
     "secondaryContactIds": [2]
   }
 }
-🧪 Merging Two Primaries
+🧪 Merging Two Primary Contacts
 {
   "contact": {
     "primaryContactId": 3,
@@ -143,35 +146,37 @@ At least one field is required.
 
 ✔ Only phoneNumber provided
 
-✔ Duplicate request (idempotency)
+✔ Duplicate request handling (idempotency)
 
-✔ Two primary contacts merging
+✔ Two primary contacts merging correctly
 
 ✔ Prevent duplicate secondary creation
 
 ✔ Oldest primary preserved
 
-✔ Proper ordering (primary contact info first)
+✔ Proper ordering (primary contact info appears first in arrays)
 
-🔒 Data Integrity
+🔒 Data Integrity Guarantees
 
-Secondary created only if exact (email + phoneNumber) pair does not already exist
+A secondary contact is created only if the exact (email + phoneNumber) pair does not already exist.
 
-Merge logic ensures a single primary per cluster
+Merge logic ensures there is only one primary per cluster.
 
-Response arrays contain no duplicates
+Response arrays contain no duplicate values.
 
-🧪 How to Run Locally
+Primary contact information always appears first in response arrays.
+
+🧪 Running Locally
 1️⃣ Install Dependencies
 npm install
 2️⃣ Setup Environment Variables
 
-Create .env file:
+Create a .env file:
 
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/bitespeed"
 3️⃣ Run Migrations
 npx prisma migrate dev
-4️⃣ Start Server
+4️⃣ Start the Server
 npm run dev
 
 Server runs at:
@@ -183,20 +188,40 @@ Hosted on Render
 
 PostgreSQL hosted on Render
 
-Prisma migrations deployed via:
+Production migrations executed via:
 
 npx prisma migrate deploy
+
+Note: Free-tier instances may experience cold starts after inactivity.
+
 ⚠️ Challenges Faced
 
-Handling conversion of primary to secondary correctly
+Handling conversion of primary contacts to secondary during merges
 
-Ensuring idempotency (avoiding duplicate secondaries)
+Ensuring strict idempotency
 
-Maintaining proper ordering in response arrays
+Preventing duplicate secondary entries
 
-Managing connected contact clusters safely
+Maintaining proper response ordering
 
-Handling deployment cold start behavior on free tier
+Correctly identifying connected clusters
+
+Managing cold start behavior on free-tier deployment
 
 📎 GitHub Repository
+
 https://github.com/Ryshup/bitespeed-identity
+
+✅ Final Notes
+
+This implementation:
+
+Correctly reconciles customer identities
+
+Maintains a single primary per cluster
+
+Handles complex merge scenarios
+
+Preserves data consistency
+
+Fully satisfies the requirements outlined in the assignment
